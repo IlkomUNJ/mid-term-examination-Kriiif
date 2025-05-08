@@ -11,7 +11,7 @@ use crate::tool::generate_dotfile_bst;
 fn main() {
     //turn on to test the old code
     // test_binary_tree();
-    test_binary_search_tree();
+    test_binary_search_tree();  
 }
 
 fn test_binary_search_tree(){
