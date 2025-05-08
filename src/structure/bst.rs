@@ -61,6 +61,35 @@ impl BstNode {
         let new_node = BstNode::new_with_parent(current_node_link, value);
         self.right = Some(new_node);
     }
+    
+    pub fn add_node(&self, target_node: &BstNodeLink, value: i32) -> bool {
+        let mut current = target_node.clone();
+
+        loop {
+            let mut current_borrow = current_borrow_mut();
+            let current_key = current_borrow_key.unwrap();
+
+            if value < current_key {
+                if let Some(left) = &current_borrow_left {
+                    drop(current_borrow);
+                    current = left.clone();
+                } else {
+                    current_borrow.add_left_child(&current, value);
+                    return true;
+                }
+            } else if value > current_key {
+                if let Some(right) = &current_borrow_right {
+                    drop(current_borrow);
+                    current = right.clone();
+                } else {
+                    current_borrow.add_right_child(&current, value);
+                    return true;
+                }
+            } else {
+                return false;
+            }
+        }
+    }
 
     /**change node u, with node v via parent swap
      * v must be singular node
@@ -210,6 +239,63 @@ impl BstNode {
             }
 
             None
+        }
+    }
+
+    pub fn tree_predecessor(node: &BstNodeLink) -> Option<BstNodeLink> {
+        let node_borrow = node.borrow();
+
+        if let Some(left) = &node_borrow_left {
+            return Some(left.borrow().maximum());
+        }
+
+        let mut current = node.clone();
+        let mut parrent = BstNode::upgrade_weak_to_strong(node_borrow.parent.clone());
+
+        drop(node_borrow);
+
+        while let Some(ref p) = parent {
+            if let Some(right_child) = &p.borrow().right {
+                if BstNode::is_node_match(right_child, &current) {
+                    return Some(p.clone());
+                }
+            }
+
+            current = p.clone();
+            parent = BstNode::upgrade_weak_to_strong(p.borrow().parent.clone());
+        }
+
+        None
+    }
+
+    pub fn median(&self) -> BstNodeLink {
+        let mut nodes: Vec<BstNodeLink> = Vec::new();
+        self.inorder_collect(&mut nodes);
+
+        let len = nodes.len();
+        if len == 0 {
+            panic!("Cannot compute the median of an empty tree");
+        }
+
+        let median_index = len / 2;
+        if len % 2 == 1 {
+            nodes[median_index].clone()
+        } else {
+            nodes[median_index - 1].clone()
+        }
+    }
+
+    fn inorder_collect(&self, nodes: &mut Vec<BstNodeLink>) {
+        if let Some(left) = &self.left {
+            left.borrow().inorder_collect(nodes);
+        }
+
+        if let Some(_) = self.key{
+            nodes.push(self.get_bst_nodelink_copy());
+        }
+
+        if let Some(right) = &self.right {
+            right.borrow().inorder_collect(nodes);
         }
     }
 
